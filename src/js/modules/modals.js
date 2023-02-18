@@ -1,9 +1,10 @@
 const modals = () => {
+  let btnPressed; // буде змінюватись, коли користувач натисне на якийсь тригер
   function bindModal(
     triggerSelector,
     modalSelector,
     closeSelector,
-    closeClickOverlay = true
+    destroy = false // при виклику модального вікна тригер зникає
   ) {
     const trigger = document.querySelectorAll(triggerSelector),
       modal = document.querySelector(modalSelector),
@@ -16,9 +17,16 @@ const modals = () => {
         if (e.target) {
           e.preventDefault();
         }
+
+        btnPressed = true;
+
+        if (destroy) {
+          item.remove();
+        }
         // перевіряємо e.target, щоб точно переконатись, що існує той елемент, на який натиснув користувач. Деякі елементи на сторінці можуть не підтримувати певні події, деякі не віддають властивість target
         window.forEach((item) => {
           item.style.display = "none";
+          item.classList.add("animated", "fadeIn");
         });
         modal.style.display = "block";
         document.body.style.overflow = "hidden";
@@ -36,7 +44,7 @@ const modals = () => {
     });
 
     modal.addEventListener("click", (e) => {
-      if (e.target === modal && closeClickOverlay) {
+      if (e.target === modal) {
         window.forEach((item) => {
           item.style.display = "none";
         });
@@ -45,25 +53,6 @@ const modals = () => {
         document.body.style.marginRight = `0px`;
       }
     });
-  }
-  // Модальне вікно автоматично з'явиться на сторінці через період time
-  function showModalByTime(selector, time) {
-    setTimeout(function () {
-      let display;
-
-      document.querySelectorAll("[data-modal]").forEach((item) => {
-        if (getComputedStyle(item).display !== "none") {
-          display = "block";
-        }
-      });
-
-      if (!display) {
-        document.querySelector(selector).style.display = "block";
-        document.body.style.overflow = "";
-        let scroll = calcScroll();
-        document.body.style.marginRight = `${scroll}px`;
-      }
-    }, time);
   }
 
   function calcScroll() {
@@ -82,12 +71,53 @@ const modals = () => {
     return scrollWidth;
   }
 
+  function showModalByTime(selector, time) {
+    setTimeout(function () {
+      let display;
+
+      document.querySelectorAll("[data-modal]").forEach((item) => {
+        if (getComputedStyle(item).display !== "none") {
+          display = "block";
+        }
+      });
+
+      if (!display) {
+        document.querySelector(selector).style.display = "block";
+        document.body.style.overflow = "hidden";
+        let scroll = calcScroll();
+        document.body.style.marginRight = `${scroll}px`;
+      }
+    }, time);
+  }
+
+  function openByScroll(selector) {
+    window.addEventListener("scroll", () => {
+      let scrollHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.offsetHeight,
+        document.body.clientHeight,
+        document.documentElement.clientHeight
+      );
+
+      if (
+        !btnPressed &&
+        window.pageYOffset + document.documentElement.clientHeight >=
+          scrollHeight
+      ) {
+        document.querySelector(selector).click();
+      }
+    });
+  }
   bindModal(".button-design", ".popup-design", ".popup-design .popup-close");
   bindModal(
     ".button-consultation",
     ".popup-consultation",
     ".popup-consultation .popup-close"
   );
+  bindModal(".fixed-gift", ".popup-gift", ".popup-gift .popup-close", true);
+  openByScroll(".fixed-gift");
   showModalByTime(".popup-consultation", 5000);
 };
 
